@@ -52,3 +52,18 @@ across the iPhone lineup?
 
 We will attach a repository with code samples and a detailed explanation.
 Thank you for your help!``
+
+## 2. Slow First Model Inference
+Even after the model has been initialized, we observe that the **first inference is significantly slower** than 
+subsequent ones. This behavior is particularly problematic for lightweight models intended to run in real-time, 
+as it disrupts smooth user experience.
+
+The root cause appears to be the **lack of persistent caching across app sessions**. 
+For security reasons, we do not store models on disk — instead, they are **decrypted at runtime**. 
+As a result, every app launch incurs a cold start.
+
+### Questions for Discussion
+
+- What strategies exist to improve first inference latency for models that are dynamically decrypted at runtime and 
+not stored on disk?
+- Are there supported mechanisms to cache or warm up the model in a secure and ephemeral way to reduce initial latency?
