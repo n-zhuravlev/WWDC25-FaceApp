@@ -1,20 +1,54 @@
 # WWDC25-FaceApp
 
 We are the **FaceApp ML team**, representing a popular photo and video editor https://www.faceapp.com/
+We work closely with Apple ML tools to deploy on-device vision models, but have recently encountered several challenges 
+we are unable to resolve.
 
-We would like to discuss two issues:
+**We would like to discuss several issues**:
 
-On the latest devices, especially with ANE and All Units, our models have fast inference times (~200ms) but extremely slow initialization (up to 10 seconds).
-- How can we decrease initialization time?
-- Is it possible to cache an already-initialized model to avoid repeated delays?
+## 1. Compute Units and Model Initialization Time
+We are facing challenges selecting the optimal `MLComputeUnits` configuration that ensures both performance and 
+stability across a range of iPhone models.
+### The `.all` Dilemma
+Using the default `.all` option for `MLComputeUnits` yields inconsistent behavior. 
+While it can deliver excellent performance on some devices, it may cause crashes on others. 
+Hardcoding a specific compute unit, such as `.gpu`, is not a scalable solution—it may be more stable, 
+but often results in significantly worse performance on newer devices like the iPhone 16 Pro Max, 
+which benefit from ANE acceleration.
 
-**2. Slow First Inference on iOS 18+**  
-First inference on iOS 18 is slower than on iOS 16, resulting in degraded performance on new devices.
-- How can we identify and address the cause?
+**Example**: In our sample project (`WWDC25-FaceApp/problem-1`), we observed the following:
 
-**3. Slow Inference for Custom Convolution Operations**  
-Some architectures use custom convolutions with variable weights (e.g., weights computed on the fly). Even simple operations (like squaring the weight) cause significant slowdowns.
-- How can we add logic to model weights without increasing inference time?
+- On **iPhone 16 Pro Max**:
+    - Inference on `.gpu` is slow
+    - Inference on `.all` and `.ane` performs well
+- On **iPhone 14**:
+    - Inference with `.all` crashes
+    - Inference with `.ane` also crashes
+
+As a result, `.all` is not reliable across devices, and targeting specific compute units like `.gpu` underperforms 
+on newer hardware.
+
+---
+
+### Model Initialization Bottlenecks
+We also encounter prohibitively long initialization times when targeting the Apple Neural Engine (ANE), 
+which introduces significant latency before the first inference.
+
+**Performance Impact**: For some models, `MLModel` initialization on ANE is up to **10× slower** than on GPU.
+
+**User Experience**: This delay negatively impacts our product experience. For example, with diffusion-based models, 
+ANE initialization can take longer than several inference steps combined—undermining the ANE's performance advantage.
+
+Again referring to our example (`WWDC25-FaceApp/problem-1`), initialization on ANE is significantly slower than on GPU 
+(iPhone 16 Pro Max), effectively canceling out the inference speed gains.
+
+---
+
+### Questions for Discussion
+
+- What is the recommended strategy for selecting `MLComputeUnits` to ensure optimal performance and stability 
+across the iPhone lineup?
+- Are there known techniques or upcoming improvements to reduce model initialization time, especially on ANE?
 
 We will attach a repository with code samples and a detailed explanation.
 Thank you for your help!``
