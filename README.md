@@ -85,5 +85,3 @@ In the `problem-3/` example, one can observe that both coremltools 8.2.0 and 8.3
 
 - What is the most proper way to impelment custom operations over the convolution operator weight kernel (e.g. square root, normalization, addition) that will be respected by quantization and on-device NPU runtime?
 - Are there any tools available to inspect which exact parts of the graph provoke OOM on-device?
-
-
