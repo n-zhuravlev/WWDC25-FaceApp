@@ -67,3 +67,23 @@ As a result, every app launch incurs a cold start.
 - What strategies exist to improve first inference latency for models that are dynamically decrypted at runtime and 
 not stored on disk?
 - Are there supported mechanisms to cache or warm up the model in a secure and ephemeral way to reduce initial latency?
+  
+
+## 3. CPU-fallback when Quantizing Custom Architectures
+We noticed that custom operations over the convolution weight tensor result in slower execution time on NPU. It is clearly evident when the model is quantized via standard `PostTrainingQuantizer` into e.g. `int8`. Presumably, it is caused by **CPU-fallback of some operators** in the resulting graph which could not be properly handled by the compiler in this specific case.
+
+Example part of a graph with a custom operation (power function) over the weights of the convolution operation:
+
+<p align="center">
+    <img width="644" alt="Screenshot 2025-06-13 at 14 38 24" src="https://github.com/user-attachments/assets/7a335236-c2ba-4a59-8087-952f8e110678" />
+</p>
+
+
+In the `problem-3/` example, one can observe that both coremltools 8.2.0 and 8.3.0 produce a model with such an issue. For larger models, we even experience **OOM (out-of-memory)** when running such architectures on-device.
+
+### Questions for Discussion
+
+- What is the most proper way to impelment custom operations over the convolution operator weight kernel (e.g. square root, normalization, addition) that will be respected by quantization and on-device NPU runtime?
+- Are there any tools available to inspect which exact parts of the graph provoke OOM on-device?
+
+
